@@ -1,0 +1,140 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: checkout-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    volumes:
+      - ./database/init:/docker-entrypoint-initdb.d:ro
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks: [checkout-net]
+
+  inventory:
+    build: ./inventory
+    container_name: checkout-inventory
+    environment:
+      SERVICE_NAME: inventory-service
+      PORT: 4001
+      INVENTORY_WAREHOUSE: BLR-WH-01
+      OTEL_SERVICE_NAME: inventory-service
+      OTEL_TRACES_EXPORTER: otlp
+      OTEL_METRICS_EXPORTER: none
+      OTEL_LOGS_EXPORTER: none
+      OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://host.docker.internal:4318
+      OTEL_NODE_DISABLED_INSTRUMENTATIONS: fs
+      NODE_OPTIONS: "--experimental-loader=@opentelemetry/instrumentation/hook.mjs --import @opentelemetry/auto-instrumentations-node/register"
+    ports:
+      - "4001:4001"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks: [checkout-net]
+
+  payment:
+    build: ./payment
+    container_name: checkout-payment
+    environment:
+      SERVICE_NAME: payment-service
+      PORT: 4002
+      PAYMENT_DELAY_MS: 2000
+      PAYMENT_PROVIDER: Stripe
+      PAYMENT_CURRENCY: INR
+      PAYMENT_METHOD: UPI
+      OTEL_SERVICE_NAME: payment-service
+      OTEL_TRACES_EXPORTER: otlp
+      OTEL_METRICS_EXPORTER: none
+      OTEL_LOGS_EXPORTER: none
+      OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://host.docker.internal:4318
+      OTEL_NODE_DISABLED_INSTRUMENTATIONS: fs
+      NODE_OPTIONS: "--experimental-loader=@opentelemetry/instrumentation/hook.mjs --import @opentelemetry/auto-instrumentations-node/register"
+    ports:
+      - "4002:4002"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks: [checkout-net]
+
+  notification:
+    build: ./notification
+    container_name: checkout-notification
+    environment:
+      SERVICE_NAME: notification-service
+      PORT: 4003
+      NOTIFICATION_CHANNEL: email
+      NOTIFICATION_TEMPLATE: order_confirmation_v2
+      NOTIFICATION_DOMAIN: example.com
+      OTEL_SERVICE_NAME: notification-service
+      OTEL_TRACES_EXPORTER: otlp
+      OTEL_METRICS_EXPORTER: none
+      OTEL_LOGS_EXPORTER: none
+      OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://host.docker.internal:4318
+      OTEL_NODE_DISABLED_INSTRUMENTATIONS: fs
+      NODE_OPTIONS: "--experimental-loader=@opentelemetry/instrumentation/hook.mjs --import @opentelemetry/auto-instrumentations-node/register"
+    ports:
+      - "4003:4003"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks: [checkout-net]
+
+  gateway:
+    build: ./gateway
+    container_name: checkout-gateway
+    environment:
+      SERVICE_NAME: gateway-service
+      PORT: 4000
+      INVENTORY_URL: http://inventory:4001
+      PAYMENT_URL: http://payment:4002
+      NOTIFICATION_URL: http://notification:4003
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      DEMO_USER_ID: demo-user-01
+      CHECKOUT_CURRENCY: INR
+      OTEL_SERVICE_NAME: gateway-service
+      OTEL_TRACES_EXPORTER: otlp
+      OTEL_METRICS_EXPORTER: none
+      OTEL_LOGS_EXPORTER: none
+      OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://host.docker.internal:4318
+      OTEL_NODE_DISABLED_INSTRUMENTATIONS: fs
+      NODE_OPTIONS: "--experimental-loader=@opentelemetry/instrumentation/hook.mjs --import @opentelemetry/auto-instrumentations-node/register"
+    ports:
+      - "4000:4000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      inventory:
+        condition: service_started
+      payment:
+        condition: service_started
+      notification:
+        condition: service_started
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks: [checkout-net]
+
+  frontend:
+    build: ./frontend
+    container_name: checkout-frontend
+    environment:
+      VITE_GATEWAY_URL: http://localhost:4000
+    ports:
+      - "5173:5173"
+    depends_on:
+      - gateway
+    networks: [checkout-net]
+
+volumes:
+  pgdata:
+
+networks:
+  checkout-net:
+    driver: bridge
