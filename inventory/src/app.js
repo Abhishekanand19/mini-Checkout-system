@@ -1,0 +1,26 @@
+import express from "express";
+import { requestContext } from "./middleware/requestContext.js";
+import { inventoryRoutes } from "./routes/inventory.routes.js";
+import { config } from "./config.js";
+
+export function createApp() {
+  const app = express();
+
+  app.use(express.json());
+  app.use(requestContext);
+
+  app.get("/health", (req, res) =>
+    res.json({ ok: true, service: config.serviceName }),
+  );
+  app.use("/inventory", inventoryRoutes);
+
+  app.use((req, res) => res.status(404).json({ error: "NOT_FOUND" }));
+
+  // eslint-disable-next-line no-unused-vars
+  app.use((err, req, res, next) => {
+    console.error(`[${config.serviceName}] unhandled`, err);
+    res.status(500).json({ error: "INTERNAL_ERROR" });
+  });
+
+  return app;
+}
