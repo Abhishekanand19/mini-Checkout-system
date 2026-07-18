@@ -1,5 +1,6 @@
 import { trace } from "@opentelemetry/api";
 import { config } from "../config.js";
+import { logger } from "../logger.js";
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -21,10 +22,27 @@ export async function sendConfirmation({
     "user.id": userId || "unknown",
   });
 
+  logger.info(
+    {
+      order_id: orderId,
+      channel: config.channel,
+      template: config.template,
+      recipient,
+    },
+    "notification queued",
+  );
+
   await sleep(200);
 
-  console.log(
-    `[${config.serviceName}] Confirmation sent for "${productName}" txn=${transactionId} req=${requestId}`,
+  logger.info(
+    {
+      order_id: orderId,
+      transaction_id: transactionId,
+      channel: config.channel,
+      recipient,
+      request_id: requestId,
+    },
+    "notification sent",
   );
 
   return {
