@@ -1,3 +1,33 @@
+# dependencies
 node_modules/
+
+# build output
 dist/
+build/
+
+# secrets — .env.example IS committed, .env is not
 .env
+.env.local
+*.env
+!.env.example
+
+# logs
+*.log
+npm-debug.log*
+.npm/
+
+# editor
+.vscode/
+.idea/
+*.swp
+
+# OS
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# foundry (only if you downloaded it into the repo)
+foundry.tar.gz
+foundry_*/
+pours/
+casting.yaml.lock
