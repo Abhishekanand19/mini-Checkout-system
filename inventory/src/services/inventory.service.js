@@ -1,5 +1,6 @@
 import { trace } from "@opentelemetry/api";
 import { config } from "../config.js";
+import { logger } from "../logger.js";
 
 const CATALOG = {
   "prod-001": {
@@ -25,18 +26,51 @@ export function checkStock({ productId, quantity, orderId, userId }) {
     "user.id": userId || "unknown",
   });
 
+  logger.info(
+    {
+      order_id: orderId,
+      product_id: productId,
+      quantity,
+      warehouse: config.warehouse,
+    },
+    "checking inventory",
+  );
+
   if (!item) {
     span?.setAttribute("inventory.available", 0);
+    logger.warn(
+      { order_id: orderId, product_id: productId },
+      "product not found",
+    );
     return { ok: false, reason: "PRODUCT_NOT_FOUND" };
   }
 
   span?.setAttribute("inventory.available", item.stock);
 
   if (item.stock < quantity) {
+    logger.warn(
+      {
+        order_id: orderId,
+        product_id: productId,
+        requested: quantity,
+        available: item.stock,
+      },
+      "out of stock",
+    );
     return { ok: false, reason: "OUT_OF_STOCK", available: item.stock };
   }
 
   item.stock -= quantity;
+
+  logger.info(
+    {
+      order_id: orderId,
+      product_id: productId,
+      available: item.stock,
+      warehouse: config.warehouse,
+    },
+    "stock available and reserved",
+  );
 
   return {
     ok: true,
