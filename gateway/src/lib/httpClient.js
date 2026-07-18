@@ -1,10 +1,5 @@
-import { config } from "../config.js";
+import { logger } from "../logger.js";
 
-/**
- * EVERY outbound call goes through here. Single network edge.
- * PHASE 2 SEAM: header injection for traceparent happens right here,
- * and this is where the client span will be created.
- */
 export async function callService({
   name,
   url,
@@ -21,7 +16,7 @@ export async function callService({
       method: "POST",
       headers: {
         "content-type": "application/json",
-        "x-request-id": requestId, // manual correlation until traceparent exists
+        "x-request-id": requestId,
       },
       body: JSON.stringify(body),
       signal: controller.signal,
@@ -30,8 +25,14 @@ export async function callService({
     const payload = await res.json().catch(() => ({}));
     const ms = Date.now() - startedAt;
 
-    console.log(
-      `[${config.serviceName}] -> ${name} ${res.status} ${ms}ms req=${requestId}`,
+    logger.debug(
+      {
+        downstream: name,
+        status: res.status,
+        duration_ms: ms,
+        request_id: requestId,
+      },
+      "downstream call",
     );
 
     if (!res.ok) {
