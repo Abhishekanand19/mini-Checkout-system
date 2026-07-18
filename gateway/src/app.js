@@ -3,6 +3,7 @@ import cors from "cors";
 import { requestContext } from "./middleware/requestContext.js";
 import { checkoutRoutes } from "./routes/checkout.routes.js";
 import { config } from "./config.js";
+import { logger } from "./logger.js";
 
 export function createApp() {
   const app = express();
@@ -21,8 +22,14 @@ export function createApp() {
   // eslint-disable-next-line no-unused-vars
   app.use((err, req, res, next) => {
     const status = err.status && err.status >= 400 ? err.status : 500;
-    console.error(
-      `[${config.serviceName}] error ${err.message} downstream=${err.downstream || "-"} req=${req.context?.requestId}`,
+    logger.error(
+      {
+        err: err.message,
+        downstream: err.downstream || null,
+        status,
+        request_id: req.context?.requestId,
+      },
+      "checkout failed",
     );
     res.status(status).json({
       error: err.message || "INTERNAL_ERROR",
