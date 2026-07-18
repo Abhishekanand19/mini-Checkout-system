@@ -28,7 +28,7 @@ services:
       OTEL_SERVICE_NAME: inventory-service
       OTEL_TRACES_EXPORTER: otlp
       OTEL_METRICS_EXPORTER: none
-      OTEL_LOGS_EXPORTER: none
+      OTEL_LOGS_EXPORTER: otlp
       OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
       OTEL_EXPORTER_OTLP_ENDPOINT: http://host.docker.internal:4318
       OTEL_NODE_DISABLED_INSTRUMENTATIONS: fs
@@ -45,14 +45,15 @@ services:
     environment:
       SERVICE_NAME: payment-service
       PORT: 4002
-      PAYMENT_DELAY_MS: 2000
+      PAYMENT_DELAY_MS: 400
+      PAYMENT_JITTER_MS: 100
       PAYMENT_PROVIDER: Stripe
       PAYMENT_CURRENCY: INR
       PAYMENT_METHOD: UPI
       OTEL_SERVICE_NAME: payment-service
       OTEL_TRACES_EXPORTER: otlp
       OTEL_METRICS_EXPORTER: none
-      OTEL_LOGS_EXPORTER: none
+      OTEL_LOGS_EXPORTER: otlp
       OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
       OTEL_EXPORTER_OTLP_ENDPOINT: http://host.docker.internal:4318
       OTEL_NODE_DISABLED_INSTRUMENTATIONS: fs
@@ -75,7 +76,7 @@ services:
       OTEL_SERVICE_NAME: notification-service
       OTEL_TRACES_EXPORTER: otlp
       OTEL_METRICS_EXPORTER: none
-      OTEL_LOGS_EXPORTER: none
+      OTEL_LOGS_EXPORTER: otlp
       OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
       OTEL_EXPORTER_OTLP_ENDPOINT: http://host.docker.internal:4318
       OTEL_NODE_DISABLED_INSTRUMENTATIONS: fs
@@ -101,7 +102,7 @@ services:
       OTEL_SERVICE_NAME: gateway-service
       OTEL_TRACES_EXPORTER: otlp
       OTEL_METRICS_EXPORTER: none
-      OTEL_LOGS_EXPORTER: none
+      OTEL_LOGS_EXPORTER: otlp
       OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
       OTEL_EXPORTER_OTLP_ENDPOINT: http://host.docker.internal:4318
       OTEL_NODE_DISABLED_INSTRUMENTATIONS: fs
