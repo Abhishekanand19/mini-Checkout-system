@@ -1,8 +1,17 @@
 import { randomUUID } from "node:crypto";
 import { trace } from "@opentelemetry/api";
 import { config } from "../config.js";
+import { logger } from "../logger.js";
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// Simulated upstream provider round-trip. Real gateways are not constant-time,
+// so jitter keeps p50/p99 from collapsing onto the same value.
+function providerLatency() {
+  const jitter =
+    config.paymentJitterMs > 0 ? Math.random() * config.paymentJitterMs : 0;
+  return Math.round(config.paymentDelayMs + jitter);
+}
 
 export async function processPayment({
   amount,
@@ -23,16 +32,39 @@ export async function processPayment({
     "user.id": userId || "unknown",
   });
 
-  console.log(`[${config.serviceName}] Processing payment... req=${requestId}`);
+  logger.info(
+    {
+      order_id: orderId,
+      user_id: userId,
+      provider: config.provider,
+      method: paymentMethod,
+      amount,
+      currency: config.currency,
+      request_id: requestId,
+    },
+    "payment request started",
+  );
 
-  await sleep(config.paymentDelayMs);
+  logger.info(
+    { order_id: orderId, amount, currency: config.currency },
+    "charging customer",
+  );
+
+  await sleep(providerLatency());
 
   const transactionId = `txn_${randomUUID().slice(0, 12)}`;
 
   span?.setAttribute("payment.status", "SUCCESS");
 
-  console.log(
-    `[${config.serviceName}] Payment Successful ${transactionId} req=${requestId}`,
+  logger.info(
+    {
+      order_id: orderId,
+      transaction_id: transactionId,
+      amount,
+      status: "SUCCESS",
+      request_id: requestId,
+    },
+    "payment successful",
   );
 
   return {
