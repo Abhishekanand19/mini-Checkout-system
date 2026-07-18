@@ -1,0 +1,29 @@
+flowchart TD
+    A["Healthy<br/>checkout = 2.2s"] --> B["Payment provider slows down<br/>checkout = 3.6s"]
+    B --> C{"Investigate in SigNoz"}
+    C --> D["Services<br/>gateway P99 3.7s"]
+    D --> E["Trace waterfall<br/>payment = 94% of trace"]
+    E --> F["Span attributes<br/>payment.status = SUCCESS<br/>not an error, just slow"]
+    F --> G["Related logs<br/>3.5s gap between<br/>'charging customer' and<br/>'payment successful'"]
+    G --> H["Fix applied<br/>checkout = 0.7s"]
+    H --> I["New shape<br/>notification now 29% of trace"]
+
+    style A fill:#dcfce7,stroke:#15803d,color:#14532d
+    style B fill:#fee2e2,stroke:#b91c1c,color:#7f1d1d
+    style C fill:#e0e7ff,stroke:#4338ca,color:#312e81
+    style H fill:#dcfce7,stroke:#15803d,color:#14532d
+    style I fill:#fef9c3,stroke:#a16207,color:#713f12flowchart TD
+    A["Healthy<br/>checkout = 2.2s"] --> B["Payment provider slows down<br/>checkout = 3.6s"]
+    B --> C{"Investigate in SigNoz"}
+    C --> D["Services<br/>gateway P99 3.7s"]
+    D --> E["Trace waterfall<br/>payment = 94% of trace"]
+    E --> F["Span attributes<br/>payment.status = SUCCESS<br/>not an error, just slow"]
+    F --> G["Related logs<br/>3.5s gap between<br/>'charging customer' and<br/>'payment successful'"]
+    G --> H["Fix applied<br/>checkout = 0.7s"]
+    H --> I["New shape<br/>notification now 29% of trace"]
+
+    style A fill:#dcfce7,stroke:#15803d,color:#14532d
+    style B fill:#fee2e2,stroke:#b91c1c,color:#7f1d1d
+    style C fill:#e0e7ff,stroke:#4338ca,color:#312e81
+    style H fill:#dcfce7,stroke:#15803d,color:#14532d
+    style I fill:#fef9c3,stroke:#a16207,color:#713f12
