@@ -1,14 +1,13 @@
 import pg from "pg";
 import { config } from "./config.js";
+import { logger } from "./logger.js";
 
 export const pool = new pg.Pool({
   connectionString: config.databaseUrl,
   max: 5,
 });
 
-pool.on("error", (err) =>
-  console.error(`[${config.serviceName}] pg pool error`, err),
-);
+pool.on("error", (err) => logger.error({ err: err.message }, "pg pool error"));
 
 export async function insertOrder({ productName, quantity, price, status }) {
   const { rows } = await pool.query(
